@@ -1,8 +1,7 @@
 import numpy as np
 import pickle
-import os
-import csv
 from libmsvmav import MSVMAv
+from sklearn.model_selection import train_test_split
 
 
 def msvmav(X_train, X_test, Y_train, Y_test, alpha, beta):
@@ -11,27 +10,28 @@ def msvmav(X_train, X_test, Y_train, Y_test, alpha, beta):
     return classifier.acc(X_test, Y_test)
 
 
-def experiment(X, Y, indices, alpha, beta):
-    result = []
-    for i in range(30):
-        X_train = X[indices[2][i], :].T
-        X_train = np.vstack((X_train, np.ones((1, X_train.shape[1]))))
-        X_test = X[indices[3][i], :].T
-        X_test = np.vstack((X_test, np.ones((1, X_test.shape[1]))))
-        Y_train = Y[indices[2][i]]
-        Y_test = Y[indices[3][i]]
-        acc = msvmav(X_train, X_test, Y_train, Y_test, alpha, beta)
-        result.append(acc)
-    return result
-
-
 def main():
     dataset = 'australian.pkl'
     with open(dataset, 'rb') as f:
         data = pickle.load(f)
     X = data[0]
     Y = data[1]
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
 
+    # Linear
+    alpha = 16
+    beta = 0.25
+    classifier = MSVMAv(alpha, beta, 'Linear')
+    classifier.fit(X_train, Y_train)
+    print(classifier.acc(X_test, Y_test))
+
+    # Gaussian Kernel
+    alpha = 1e6
+    beta = 1e-10
+    gamma = 1e-8
+    classifier = MSVMAv(alpha, beta, 'Gaussian', gamma=gamma)
+    classifier.fit(X_train, Y_train)
+    print(classifier.acc(X_test, Y_test))
 
 
 if __name__ == '__main__':
